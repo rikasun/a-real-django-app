@@ -101,3 +101,5 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+Note: The Redis version has been downgraded to 4.0.2 in the requirements.txt file.
