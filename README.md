@@ -44,6 +44,7 @@ If you prefer to run without Docker:
    ```bash
    pip install -r requirements.txt
    ```
+   ⚠️ **Note:** The `redis` package has been updated to version 5.4.0. Ensure compatibility with your environment.
 3. Copy `.env.example` to `.env` and update the values
 4. Run migrations:
    ```bash
@@ -101,3 +102,4 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+⚠️ **Note:** The `redis` package has been updated to version 5.4.0. Ensure compatibility with your environment.
