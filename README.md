@@ -101,3 +101,5 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+Note: The dependencies `django-redis` and `redis` have been updated to versions 5.8.6 and 6.0.0 respectively. Ensure compatibility with your environment.
