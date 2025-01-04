@@ -1,7 +1,15 @@
 # a-real-django-app
 A real django app. Can't be more real.
 
-## Docker Setup (Recommended)
+## Quick Start Guide
+
+### Minimum Requirements
+- Docker and Docker Compose installed
+- Python 3.8+
+
+### Installation in < 5 minutes
+
+#### Docker Setup (Recommended)
 
 1. Install Docker and Docker Compose on your system
 2. Clone the repository
@@ -16,22 +24,7 @@ A real django app. Can't be more real.
 
 The application will be available at http://localhost:8001
 
-### Running Tests with Docker
-```bash
-docker-compose exec web python manage.py test
-```
-
-### Accessing Django Shell
-```bash
-docker-compose exec web python manage.py shell
-```
-
-### Viewing Logs
-```bash
-docker-compose logs -f
-```
-
-## Local Setup (Alternative)
+#### Local Setup (Alternative)
 
 If you prefer to run without Docker:
 
@@ -53,6 +46,33 @@ If you prefer to run without Docker:
    ```bash
    python manage.py runserver
    ```
+
+### Basic Usage Example
+- Access the application at http://localhost:8001
+
+### Common Gotchas
+- Ensure Docker is running before executing Docker commands.
+
+## Core Workflows
+
+### Running Tests with Docker
+```bash
+docker-compose exec web python manage.py test
+```
+
+### Accessing Django Shell
+```bash
+docker-compose exec web python manage.py shell
+```
+
+### Viewing Logs
+```bash
+docker-compose logs -f
+```
+
+## Detailed Configuration
+
+## Advanced Usage
 
 ## Environment Variables
 
@@ -101,3 +121,7 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## Contributing
+
+## License
