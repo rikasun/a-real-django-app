@@ -64,7 +64,7 @@ Required environment variables:
 - `DB_PASSWORD`: Database password
 - `DB_HOST`: Database host
 - `DB_PORT`: Database port
-- `REDIS_URL`: Redis connection URL
+- `REDIS_URL`: Redis connection URL (ensure compatibility with Redis 6.3.0)
 
 ## API Documentation
 
@@ -101,3 +101,5 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+Ensure that your environment is compatible with the updated `django-redis` and `redis` versions.
