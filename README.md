@@ -65,7 +65,7 @@ Required environment variables:
 - `DB_HOST`: Database host
 - `DB_PORT`: Database port
 - `REDIS_URL`: Redis connection URL
-- `SENTRY_DSN`: Sentry Data Source Name for error tracking (optional)
+- `SENTRY_DSN`: Sentry Data Source Name for error tracking (required if using Sentry)
 
 ## API Documentation
 
