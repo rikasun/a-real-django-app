@@ -1,6 +1,19 @@
 # a-real-django-app
 A real django app. Can't be more real.
 
+## Project Overview
+
+This project is a Django-based web application designed to provide a robust and scalable platform for web services. It includes features such as API endpoints, user authentication, and background task scheduling.
+
+### Current Version/Status
+- Version: 1.0.0
+- Status: Active Development
+
+### System Requirements
+- Docker and Docker Compose (for Docker setup)
+- Python 3.8+
+- PostgreSQL
+
 ## Docker Setup (Recommended)
 
 1. Install Docker and Docker Compose on your system
@@ -102,3 +115,8 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## Additional Notes
+
+- The project now includes a `package.json` file indicating the use of Node.js packages for scheduling and email notifications.
+- The `requirements.txt` has been updated to reflect the current Python dependencies, including APScheduler and SQLAlchemy.
