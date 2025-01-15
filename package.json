@@ -1,0 +1,10 @@
+{
+  "name": "scheduler-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.9",
+    "winston": "^3.11.0",
+    "date-fns": "^3.3.1"
+  }
+} 
