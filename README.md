@@ -1,6 +1,10 @@
 # a-real-django-app
 A real django app. Can't be more real.
 
+## Project Overview
+
+This project is a Django application designed to provide a robust and scalable web service. It includes features such as user authentication, data management, and API endpoints for integration with other services. The current version is 1.0.0, and it is actively maintained. The system requirements include Python 3.8+, Docker, and Docker Compose.
+
 ## Docker Setup (Recommended)
 
 1. Install Docker and Docker Compose on your system
@@ -102,3 +106,7 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+### Scheduler Setup
+
+The project includes a scheduler for running periodic tasks. The scheduler is implemented in multiple languages (PHP, JavaScript, Python) and is configured to run daily cleanup jobs. Ensure the scheduler is running to maintain optimal performance and data integrity.
