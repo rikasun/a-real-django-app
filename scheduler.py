@@ -28,6 +28,9 @@ def cleanup_old_records():
         print(f"Error in cleanup job: {str(e)}")
         email_service.send_alert('Cleanup job failed', str(e))
 
-# Run every day at midnight
-scheduler.add_job(cleanup_old_records, 'cron', hour=0)
+# Run at 2 AM and 2 PM every day
+scheduler.add_job(cleanup_old_records, 'cron', hour='2,14')
+
+# Run every Monday and Thursday at 3 AM
+scheduler.add_job(cleanup_old_records, 'cron', day_of_week='mon,thu', hour=3)
 scheduler.start() 

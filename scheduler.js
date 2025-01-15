@@ -1,8 +1,8 @@
 const cron = require('node-cron');
 const { cleanupOldRecords, sendSummaryReport } = require('./services/cleanup');
 
-// Run cleanup job every day at midnight
-cron.schedule('0 0 * * *', async () => {
+// Daily cleanup at 2 AM
+cron.schedule('0 2 * * *', async () => {
   console.log(`Starting daily cleanup job at ${new Date().toISOString()}`);
   
   try {
@@ -20,4 +20,9 @@ cron.schedule('0 0 * * *', async () => {
   } catch (error) {
     console.error('Cleanup job failed:', error);
   }
+});
+
+// Weekly deep cleanup on Sundays at 3 AM
+cron.schedule('0 3 * * 0', async () => {
+  // ... deep cleanup logic ...
 }); 
