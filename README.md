@@ -102,3 +102,14 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## New Features
+
+Recent updates include the addition of new settings management features in the API. These include:
+- A new `settings.js` file for managing scheduler settings via an Express.js API.
+- A new `settings.py` file for managing scheduler settings via a FastAPI API.
+- New models in `models/settings.py` for handling settings data.
+
+These changes introduce new endpoints for getting, updating, and restoring settings, as well as viewing settings history.
+
+Ensure to review the new API endpoints and their usage in the updated codebase.
