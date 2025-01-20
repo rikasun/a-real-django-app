@@ -36,6 +36,10 @@ class CleanupService:
         self.email_service = EmailService()
         self.backup_path = Path("./backups")
         self.backup_path.mkdir(exist_ok=True)
+        self.last_cleanup_time = None
+        self.total_records_archived = 0
+        self.cleanup_history = []
+        self.start_time = datetime.now()
 
     def get_system_metrics(self) -> Dict[str, Any]:
         return {
@@ -46,6 +50,7 @@ class CleanupService:
         }
 
     async def cleanup_old_records(self, config: CleanupConfig):
+        start_time = datetime.now()
         try:
             logger.info(f"Starting cleanup with config: {config}")
             metrics_before = self.get_system_metrics()
@@ -78,15 +83,52 @@ class CleanupService:
             await self.email_service.send_admin_report(report_data)
             logger.info(f"Cleanup completed. Archived {archived_count} records.")
             
+            self.last_cleanup_time = datetime.now()
+            self.total_records_archived += archived_count
+            
+            # Record history
+            self.cleanup_history.append({
+                'timestamp': self.last_cleanup_time,
+                'records_archived': archived_count,
+                'duration_seconds': (datetime.now() - start_time).total_seconds(),
+                'success': True,
+                'error_message': None
+            })
+            
+            # Keep only last 100 entries
+            if len(self.cleanup_history) > 100:
+                self.cleanup_history = self.cleanup_history[-100:]
+                
         except Exception as e:
+            # Record failed cleanup
+            self.cleanup_history.append({
+                'timestamp': datetime.now(),
+                'records_archived': 0,
+                'duration_seconds': (datetime.now() - start_time).total_seconds(),
+                'success': False,
+                'error_message': str(e)
+            })
             logger.error(f"Error in cleanup job: {str(e)}", exc_info=True)
             await self.email_service.send_alert('Cleanup job failed', str(e))
+            raise
 
     async def create_backup(self):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_file = self.backup_path / f"backup_{timestamp}.sql"
         await self.db.create_backup(backup_file)
         logger.info(f"Created backup: {backup_file}")
+
+    def get_uptime(self) -> float:
+        return (datetime.now() - self.start_time).total_seconds()
+
+    def get_next_scheduled_run(self) -> datetime:
+        jobs = self.scheduler.get_jobs()
+        if not jobs:
+            return None
+        return min(job.next_run_time for job in jobs)
+
+    async def get_cleanup_history(self) -> List[Dict]:
+        return self.cleanup_history
 
 class DiskSpaceMonitor:
     def __init__(self, threshold_percent: float = 85.0):
