@@ -3,6 +3,8 @@ const { cleanupOldRecords, sendSummaryReport } = require('./services/cleanup');
 const winston = require('winston');
 const { format } = require('date-fns');
 const nodemailer = require('nodemailer');
+const fs = require('fs').promises;
+const diskusage = require('disk-space');
 
 // Configure logger
 const logger = winston.createLogger({
@@ -88,4 +90,75 @@ cron.schedule('0 3 * * 0', async () => {
 });
 
 // Health check every hour
-cron.schedule('0 * * * *', checkHealth); 
+cron.schedule('0 * * * *', checkHealth);
+
+// Add after the health check function
+const DISK_THRESHOLD = 85; // Trigger emergency cleanup when disk usage > 85%
+
+async function checkDiskSpace() {
+  try {
+    const disk = await new Promise((resolve, reject) => {
+      diskusage.check('/', (err, info) => {
+        if (err) reject(err);
+        else resolve(info);
+      });
+    });
+
+    const usagePercent = (disk.used / disk.total) * 100;
+    logger.info(`Current disk usage: ${usagePercent.toFixed(2)}%`);
+
+    if (usagePercent > DISK_THRESHOLD) {
+      logger.warn(`Disk usage critical (${usagePercent.toFixed(2)}%), initiating emergency cleanup`);
+      
+      // Perform aggressive cleanup
+      await emergencyCleanup();
+    }
+  } catch (error) {
+    logger.error('Disk space check failed:', error);
+  }
+}
+
+async function emergencyCleanup() {
+  try {
+    // Cleanup temporary files first
+    await cleanupTempFiles();
+    
+    // Aggressive database cleanup - shorter retention period
+    const archivedCount = await cleanupOldRecords(7, { 
+      aggressive: true,
+      skipBackup: true 
+    });
+
+    // Clear logs older than 2 days
+    const logsPath = './logs';
+    const files = await fs.readdir(logsPath);
+    const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000);
+
+    for (const file of files) {
+      const filePath = `${logsPath}/${file}`;
+      const stats = await fs.stat(filePath);
+      if (stats.mtime.getTime() < twoDaysAgo) {
+        await fs.unlink(filePath);
+        logger.info(`Removed old log file: ${file}`);
+      }
+    }
+
+    // Send emergency notification
+    await mailer.sendMail({
+      from: process.env.ALERT_FROM,
+      to: process.env.ALERT_TO,
+      subject: 'Emergency Cleanup Performed',
+      text: `Emergency cleanup completed:\n` +
+            `- Archived ${archivedCount} records\n` +
+            `- Cleaned up temporary files\n` +
+            `- Removed old log files\n` +
+            `Current disk usage: ${(await checkDiskSpace()).usagePercent.toFixed(2)}%`
+    });
+
+  } catch (error) {
+    logger.error('Emergency cleanup failed:', error);
+  }
+}
+
+// Add disk space monitoring (every 15 minutes)
+cron.schedule('*/15 * * * *', checkDiskSpace); 

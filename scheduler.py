@@ -5,9 +5,11 @@ from services.notifications import EmailService
 import logging
 import psutil
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
+import asyncio
 
 # Configure logging
 logging.basicConfig(
@@ -86,6 +88,99 @@ class CleanupService:
         await self.db.create_backup(backup_file)
         logger.info(f"Created backup: {backup_file}")
 
+class DiskSpaceMonitor:
+    def __init__(self, threshold_percent: float = 85.0):
+        self.threshold_percent = threshold_percent
+        self.emergency_mode = False
+
+    def get_disk_usage(self, path: str = "/") -> float:
+        usage = shutil.disk_usage(path)
+        return (usage.used / usage.total) * 100
+
+    async def check_disk_space(self) -> None:
+        try:
+            usage_percent = self.get_disk_usage()
+            logger.info(f"Current disk usage: {usage_percent:.2f}%")
+
+            if usage_percent > self.threshold_percent:
+                if not self.emergency_mode:
+                    logger.warning(f"Disk usage critical ({usage_percent:.2f}%), initiating emergency cleanup")
+                    self.emergency_mode = True
+                    await self.perform_emergency_cleanup()
+            else:
+                self.emergency_mode = False
+
+        except Exception as e:
+            logger.error(f"Disk space check failed: {str(e)}", exc_info=True)
+
+    async def perform_emergency_cleanup(self) -> None:
+        try:
+            # 1. Clear old log files
+            await self.cleanup_old_logs(days=2)
+
+            # 2. Aggressive database cleanup
+            config = CleanupConfig(
+                retention_days=7,
+                batch_size=5000,
+                optimize_db=True,
+                backup_first=False  # Skip backup in emergency mode
+            )
+            await cleanup_service.cleanup_old_records(config)
+
+            # 3. Clear temporary files
+            temp_files_removed = await self.cleanup_temp_files()
+
+            # 4. Send emergency notification
+            await self.send_emergency_report(temp_files_removed)
+
+        except Exception as e:
+            logger.error(f"Emergency cleanup failed: {str(e)}", exc_info=True)
+
+    async def cleanup_old_logs(self, days: int) -> List[str]:
+        removed_files = []
+        log_dir = Path("./logs")
+        if not log_dir.exists():
+            return removed_files
+
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        for log_file in log_dir.glob("*.log"):
+            if log_file.stat().st_mtime < cutoff_date.timestamp():
+                log_file.unlink()
+                removed_files.append(log_file.name)
+                logger.info(f"Removed old log file: {log_file.name}")
+
+        return removed_files
+
+    async def cleanup_temp_files(self) -> int:
+        temp_dir = Path("./temp")
+        if not temp_dir.exists():
+            return 0
+
+        count = 0
+        for temp_file in temp_dir.glob("*"):
+            if temp_file.is_file():
+                temp_file.unlink()
+                count += 1
+
+        return count
+
+    async def send_emergency_report(self, temp_files_removed: int):
+        current_usage = self.get_disk_usage()
+        report = {
+            'type': 'Emergency Cleanup Report',
+            'timestamp': datetime.now(),
+            'initial_disk_usage': f"{self.threshold_percent}%+",
+            'current_disk_usage': f"{current_usage:.2f}%",
+            'actions_taken': {
+                'temp_files_removed': temp_files_removed,
+                'aggressive_cleanup_performed': True,
+                'logs_cleaned': True
+            }
+        }
+        
+        await cleanup_service.email_service.send_admin_report(report)
+
 cleanup_service = CleanupService()
 
 # Run at 2 AM and 2 PM every day
@@ -112,6 +207,17 @@ cleanup_service.scheduler.add_job(
     lambda: logger.info(f"Health check: {cleanup_service.get_system_metrics()}"),
     'interval',
     minutes=30
+)
+
+# Initialize disk monitor
+disk_monitor = DiskSpaceMonitor()
+
+# Add disk space monitoring job (every 15 minutes)
+cleanup_service.scheduler.add_job(
+    disk_monitor.check_disk_space,
+    'interval',
+    minutes=15,
+    id='disk_space_monitor'
 )
 
 cleanup_service.scheduler.start() 
