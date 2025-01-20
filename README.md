@@ -102,3 +102,12 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## New Features
+
+Recent updates include the addition of monitoring capabilities for the scheduler. The following endpoints have been added:
+
+- **Scheduler Stats**: `/api/monitor/stats` - Provides uptime, last cleanup time, records archived, next scheduled run, system metrics, and disk usage.
+- **Cleanup History**: `/api/monitor/history` - Provides a history of recent cleanup operations.
+
+These endpoints are implemented in both JavaScript and Python, using Express and FastAPI respectively.
