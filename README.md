@@ -102,3 +102,12 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## Recent Updates
+
+Recent changes include the addition of new API endpoints for dashboard overview, performance metrics, and alerts. These changes are reflected in the following files:
+- `api/dashboard.js`
+- `api/dashboard.py`
+- `models/dashboard.py`
+
+These updates introduce new functionalities for monitoring system health, cleanup statistics, and performance metrics, which are crucial for maintaining the application's operational efficiency.
