@@ -102,3 +102,13 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## Recent Updates
+
+- Added new authentication routes in `api/auth.js` and `api/auth_routes.py`.
+- Implemented role-based access control in `auth/roleMiddleware.js` and `config/roles.js`.
+- Updated `requirements.txt` and `package.json` to include new dependencies.
+
+## Note
+
+Ensure to review the new role-based access control features and update your environment variables accordingly.
