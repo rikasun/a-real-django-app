@@ -1,21 +1,82 @@
 from datetime import datetime, timedelta
 import jwt
 import bcrypt
+import re
 from typing import Optional, Dict
 from dataclasses import dataclass
+from pydantic import BaseModel, EmailStr, validator
+
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+
+    @validator('username')
+    def username_valid(cls, v):
+        if not re.match(r'^[a-zA-Z0-9_]{3,}$', v):
+            raise ValueError('Username must be at least 3 characters and contain only letters, numbers, and underscores')
+        return v
+
+    @validator('password')
+    def password_strong(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if not re.search(r'[A-Za-z]', v):
+            raise ValueError('Password must contain letters')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain numbers')
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError('Password must contain special characters')
+        return v
 
 @dataclass
 class User:
     id: int
     username: str
+    email: str
     role: str
     password_hash: str
+    created_at: datetime
 
 class AuthService:
     def __init__(self, secret_key: str, token_expiry: int = 24):
         self.secret_key = secret_key
         self.token_expiry = token_expiry
         self._users = {}  # In-memory user store (replace with database)
+
+    async def signup(self, request: SignupRequest) -> Dict:
+        """Register a new user"""
+        # Check if username exists
+        if request.username in self._users:
+            raise ValueError('Username already exists')
+
+        # Hash password
+        password_hash = bcrypt.hashpw(request.password.encode(), bcrypt.gensalt())
+
+        # Create user
+        user = User(
+            id=len(self._users) + 1,
+            username=request.username,
+            email=request.email,
+            role='user',
+            password_hash=password_hash,
+            created_at=datetime.utcnow()
+        )
+        
+        self._users[request.username] = user
+
+        # Generate token
+        token = self.create_token(user)
+        
+        return {
+            'token': token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role
+            }
+        }
 
     def create_user(self, username: str, password: str, role: str = 'user') -> User:
         """Create a new user with hashed password"""
