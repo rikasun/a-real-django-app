@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { getUserByCredentials, createUser, getUserByUsername } = require('../services/users');
+const { getUserByCredentials, createUser, getUserByUsername, updateUserRole } = require('../services/users');
+const { ROLES, ROLE_PERMISSIONS } = require('../config/roles');
 
 const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key';
 const SALT_ROUNDS = 10;
@@ -45,12 +46,22 @@ class AuthService {
     }
   }
 
-  static async signup(username, password, email) {
+  static async signup(username, password, email, role = ROLES.USER) {
     try {
       // Check if username already exists
       const existingUser = await getUserByUsername(username);
       if (existingUser) {
         throw new Error('Username already exists');
+      }
+
+      // Only admins can create other admins
+      if (role === ROLES.ADMIN && (!this.currentUser || this.currentUser.role !== ROLES.ADMIN)) {
+        throw new Error('Unauthorized to create admin users');
+      }
+
+      // Validate role
+      if (!Object.values(ROLES).includes(role)) {
+        throw new Error('Invalid role specified');
       }
 
       // Validate password strength
@@ -66,7 +77,7 @@ class AuthService {
         username,
         password: hashedPassword,
         email,
-        role: 'user',
+        role,
         created_at: new Date()
       });
 
@@ -102,6 +113,37 @@ class AuthService {
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
     
     return password.length >= minLength && hasLetter && hasNumber && hasSpecialChar;
+  }
+
+  static async updateUserRole(userId, newRole, adminToken) {
+    try {
+      // Verify admin token
+      const decoded = await this.verifyToken(adminToken);
+      if (decoded.role !== ROLES.ADMIN) {
+        throw new Error('Only admins can update user roles');
+      }
+
+      // Validate new role
+      if (!Object.values(ROLES).includes(newRole)) {
+        throw new Error('Invalid role specified');
+      }
+
+      const updatedUser = await updateUserRole(userId, newRole);
+      return {
+        success: true,
+        user: {
+          id: updatedUser.id,
+          username: updatedUser.username,
+          role: updatedUser.role
+        }
+      };
+    } catch (error) {
+      throw new Error(`Role update failed: ${error.message}`);
+    }
+  }
+
+  static hasPermission(userRole, permission) {
+    return ROLE_PERMISSIONS[userRole]?.includes(permission) || false;
   }
 }
 

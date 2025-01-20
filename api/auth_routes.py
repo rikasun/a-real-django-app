@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from auth.auth_service import AuthService, SignupRequest
 import logging
+from config.roles import Role, Permission
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -36,4 +37,24 @@ async def login(username: str, password: str):
         return result
     except Exception as e:
         logger.error(f"Login failed: {str(e)}")
-        raise HTTPException(status_code=401, detail="Authentication failed") 
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
+@router.put("/users/{user_id}/role")
+async def update_role(
+    user_id: int,
+    new_role: Role,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        result = await auth_service.update_user_role(user_id, new_role, current_user)
+        logger.info(f"Role updated for user {user_id} to {new_role}")
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@router.get("/users/me/permissions")
+async def get_permissions(current_user: User = Depends(get_current_user)):
+    return {
+        'role': current_user.role,
+        'permissions': list(ROLE_PERMISSIONS.get(current_user.role, set()))
+    } 

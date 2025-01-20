@@ -5,11 +5,15 @@ import re
 from typing import Optional, Dict
 from dataclasses import dataclass
 from pydantic import BaseModel, EmailStr, validator
+from config.roles import Role, Permission, ROLE_PERMISSIONS
+from fastapi import HTTPException, Security
+from fastapi.security import OAuth2PasswordBearer
 
 class SignupRequest(BaseModel):
     username: str
     password: str
     email: EmailStr
+    role: Optional[Role] = None
 
     @validator('username')
     def username_valid(cls, v):
@@ -44,39 +48,33 @@ class AuthService:
         self.token_expiry = token_expiry
         self._users = {}  # In-memory user store (replace with database)
 
-    async def signup(self, request: SignupRequest) -> Dict:
-        """Register a new user"""
-        # Check if username exists
+    async def signup(self, request: SignupRequest, admin_user: Optional[User] = None) -> Dict:
+        """Register a new user with role validation"""
         if request.username in self._users:
             raise ValueError('Username already exists')
 
-        # Hash password
-        password_hash = bcrypt.hashpw(request.password.encode(), bcrypt.gensalt())
+        # Role validation
+        requested_role = request.role if hasattr(request, 'role') else Role.USER
+        
+        # Only admins can create other admins
+        if requested_role == Role.ADMIN and (not admin_user or admin_user.role != Role.ADMIN):
+            raise ValueError('Unauthorized to create admin users')
 
-        # Create user
+        if requested_role not in Role:
+            raise ValueError('Invalid role specified')
+
+        # Create user with role
         user = User(
             id=len(self._users) + 1,
             username=request.username,
             email=request.email,
-            role='user',
-            password_hash=password_hash,
+            role=requested_role,
+            password_hash=self._hash_password(request.password),
             created_at=datetime.utcnow()
         )
         
         self._users[request.username] = user
-
-        # Generate token
-        token = self.create_token(user)
-        
-        return {
-            'token': token,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role
-            }
-        }
+        return self._create_user_response(user)
 
     def create_user(self, username: str, password: str, role: str = 'user') -> User:
         """Create a new user with hashed password"""
@@ -124,4 +122,57 @@ class AuthService:
         try:
             return jwt.decode(token, self.secret_key, algorithms=['HS256'])
         except jwt.InvalidTokenError:
-            return None 
+            return None
+
+    async def update_user_role(
+        self, 
+        user_id: int, 
+        new_role: Role, 
+        admin_user: User
+    ) -> Dict:
+        """Update user role (admin only)"""
+        if admin_user.role != Role.ADMIN:
+            raise ValueError('Only admins can update user roles')
+
+        if new_role not in Role:
+            raise ValueError('Invalid role specified')
+
+        user = self._find_user_by_id(user_id)
+        if not user:
+            raise ValueError('User not found')
+
+        user.role = new_role
+        return self._create_user_response(user)
+
+    def has_permission(self, user: User, permission: Permission) -> bool:
+        """Check if user has specific permission"""
+        return permission in ROLE_PERMISSIONS.get(user.role, set())
+
+    def _create_user_response(self, user: User) -> Dict:
+        """Create standardized user response"""
+        return {
+            'token': self.create_token(user),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'permissions': list(ROLE_PERMISSIONS.get(user.role, set()))
+            }
+        }
+
+    def _hash_password(self, password: str) -> str:
+        # Implement password hashing logic
+        pass
+
+    def _find_user_by_id(self, user_id: int) -> Optional[User]:
+        # Implement logic to find a user by ID
+        return None
+
+    def _hash_password(self, password: str) -> str:
+        # Implement password hashing logic
+        pass
+
+    def _find_user_by_id(self, user_id: int) -> Optional[User]:
+        # Implement logic to find a user by ID
+        return None 
