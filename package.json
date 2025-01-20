@@ -5,6 +5,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.9",
     "winston": "^3.11.0",
-    "date-fns": "^3.3.1"
+    "date-fns": "^3.3.1",
+    "disk-space": "^1.1.0"
   }
 } 
