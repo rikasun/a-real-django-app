@@ -130,6 +130,114 @@ class CleanupService:
     async def get_cleanup_history(self) -> List[Dict]:
         return self.cleanup_history
 
+    async def generate_scheduler_report(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+        """
+        Generate a comprehensive report of scheduler activities and performance metrics for a specified time period.
+
+        This function analyzes scheduler performance, cleanup operations, and system metrics to create
+        a detailed report. It includes statistics about cleanup jobs, system resource utilization,
+        and overall efficiency metrics.
+
+        Args:
+            start_date (datetime): The start date for the report period
+            end_date (datetime): The end date for the report period
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the following report sections:
+                - performance_metrics: CPU and memory usage statistics
+                - cleanup_stats: Statistics about cleanup operations
+                - disk_usage: Storage utilization metrics
+                - job_history: Historical data about scheduled jobs
+                Example:
+                {
+                    'performance_metrics': {
+                        'avg_cpu_usage': 45.2,
+                        'peak_memory_usage': 1024.5,
+                        'avg_job_duration': 120.5
+                    },
+                    'cleanup_stats': {
+                        'total_jobs': 48,
+                        'successful_jobs': 45,
+                        'records_archived': 15000,
+                        'success_rate': 93.75
+                    },
+                    'disk_usage': {
+                        'space_reclaimed': 1024000,
+                        'efficiency_ratio': 0.85
+                    },
+                    'job_history': [
+                        {
+                            'timestamp': '2024-03-10T15:30:00',
+                            'status': 'success',
+                            'duration': 118.5,
+                            'records_processed': 500
+                        },
+                        ...
+                    ]
+                }
+
+        Raises:
+            ValueError: If end_date is before start_date or if the date range is invalid
+            RuntimeError: If there's an error accessing the metrics or generating the report
+
+        Example:
+            >>> start = datetime(2024, 3, 1)
+            >>> end = datetime(2024, 3, 15)
+            >>> report = await scheduler.generate_scheduler_report(start, end)
+            >>> print(f"Success rate: {report['cleanup_stats']['success_rate']}%")
+            Success rate: 93.75%
+        """
+        try:
+            # Validate date range
+            if end_date < start_date:
+                raise ValueError("End date must be after start date")
+            
+            # Get performance metrics
+            metrics = self.get_system_metrics()
+            
+            # Get cleanup history for the period
+            cleanup_history = [job for job in self.cleanup_history 
+                             if start_date <= job['timestamp'] <= end_date]
+            
+            # Calculate cleanup statistics
+            total_jobs = len(cleanup_history)
+            successful_jobs = len([job for job in cleanup_history if job['success']])
+            success_rate = (successful_jobs / total_jobs * 100) if total_jobs > 0 else 0
+            
+            # Calculate total records archived
+            total_records = sum(job['records_archived'] for job in cleanup_history if job['success'])
+            
+            # Calculate average job duration
+            durations = [job['duration_seconds'] for job in cleanup_history if job['success']]
+            avg_duration = sum(durations) / len(durations) if durations else 0
+            
+            # Compile the report
+            report = {
+                'performance_metrics': {
+                    'avg_cpu_usage': metrics['cpu_percent'],
+                    'peak_memory_usage': metrics['memory_usage'],
+                    'avg_job_duration': avg_duration
+                },
+                'cleanup_stats': {
+                    'total_jobs': total_jobs,
+                    'successful_jobs': successful_jobs,
+                    'records_archived': total_records,
+                    'success_rate': success_rate
+                },
+                'disk_usage': {
+                    'space_reclaimed': self.calculate_space_reclaimed(),
+                    'efficiency_ratio': self.calculate_efficiency_ratio()
+                },
+                'job_history': cleanup_history
+            }
+            
+            logger.info(f"Generated scheduler report for period: {start_date} to {end_date}")
+            return report
+            
+        except Exception as e:
+            logger.error(f"Failed to generate scheduler report: {str(e)}")
+            raise RuntimeError(f"Error generating scheduler report: {str(e)}")
+
 class DiskSpaceMonitor:
     def __init__(self, threshold_percent: float = 85.0):
         self.threshold_percent = threshold_percent
