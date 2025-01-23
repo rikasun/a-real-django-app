@@ -12,6 +12,8 @@
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express-validator": "^7.0.1",
-    "email-validator": "^2.0.4"
+    "email-validator": "^2.0.4",
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.13.0"
   }
 } 
