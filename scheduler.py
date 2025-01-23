@@ -1,3 +1,4 @@
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 from services.database import Database
@@ -138,9 +139,10 @@ class CleanupService:
         a detailed report. It includes statistics about cleanup jobs, system resource utilization,
         and overall efficiency metrics.
 
-        Args:
-            start_date (datetime): The start date for the report period
-            end_date (datetime): The end date for the report period
+        Parameters:
+        - start_date (datetime): The start date for the report.
+        - end_date (datetime): The end date for the report.
+        - limit (int, optional): The maximum number of records to include in the report. Defaults to 100.
 
         Returns:
             Dict[str, Any]: A dictionary containing the following report sections:
