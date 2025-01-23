@@ -141,6 +141,7 @@ class CleanupService:
         Args:
             start_date (datetime): The start date for the report period
             end_date (datetime): The end date for the report period
+            limit (int): The maximum number of job history entries to include in the report. Default is 100.
 
         Returns:
             Dict[str, Any]: A dictionary containing the following report sections:
