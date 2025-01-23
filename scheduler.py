@@ -134,58 +134,13 @@ class CleanupService:
         """
         Generate a comprehensive report of scheduler activities and performance metrics for a specified time period.
 
-        This function analyzes scheduler performance, cleanup operations, and system metrics to create
-        a detailed report. It includes statistics about cleanup jobs, system resource utilization,
-        and overall efficiency metrics.
-
-        Args:
-            start_date (datetime): The start date for the report period
-            end_date (datetime): The end date for the report period
+        Parameters:
+        - start_date (datetime): The start date for the report.
+        - end_date (datetime): The end date for the report.
+        - limit (int, optional): The maximum number of records to include in the report. Defaults to 100.
 
         Returns:
-            Dict[str, Any]: A dictionary containing the following report sections:
-                - performance_metrics: CPU and memory usage statistics
-                - cleanup_stats: Statistics about cleanup operations
-                - disk_usage: Storage utilization metrics
-                - job_history: Historical data about scheduled jobs
-                Example:
-                {
-                    'performance_metrics': {
-                        'avg_cpu_usage': 45.2,
-                        'peak_memory_usage': 1024.5,
-                        'avg_job_duration': 120.5
-                    },
-                    'cleanup_stats': {
-                        'total_jobs': 48,
-                        'successful_jobs': 45,
-                        'records_archived': 15000,
-                        'success_rate': 93.75
-                    },
-                    'disk_usage': {
-                        'space_reclaimed': 1024000,
-                        'efficiency_ratio': 0.85
-                    },
-                    'job_history': [
-                        {
-                            'timestamp': '2024-03-10T15:30:00',
-                            'status': 'success',
-                            'duration': 118.5,
-                            'records_processed': 500
-                        },
-                        ...
-                    ]
-                }
-
-        Raises:
-            ValueError: If end_date is before start_date or if the date range is invalid
-            RuntimeError: If there's an error accessing the metrics or generating the report
-
-        Example:
-            >>> start = datetime(2024, 3, 1)
-            >>> end = datetime(2024, 3, 15)
-            >>> report = await scheduler.generate_scheduler_report(start, end)
-            >>> print(f"Success rate: {report['cleanup_stats']['success_rate']}%")
-            Success rate: 93.75%
+        - Dict[str, Any]: A dictionary containing the report data.
         """
         try:
             # Validate date range
