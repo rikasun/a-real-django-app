@@ -130,7 +130,7 @@ class CleanupService:
     async def get_cleanup_history(self) -> List[Dict]:
         return self.cleanup_history
 
-    async def generate_scheduler_report(self, start_date: datetime, end_date: datetime, limit: int = 100) -> Dict[str, Any]:
+    async def generate_scheduler_report(self, start_date: datetime, end_date: datetime, lmt: int = 200) -> Dict[str, Any]:
         """
         Generate a comprehensive report of scheduler activities and performance metrics for a specified time period.
 
