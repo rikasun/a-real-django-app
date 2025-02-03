@@ -161,4 +161,33 @@ async function emergencyCleanup() {
 }
 
 // Add disk space monitoring (every 15 minutes)
-cron.schedule('*/15 * * * *', checkDiskSpace); 
+cron.schedule('*/15 * * * *', checkDiskSpace);
+
+// Add new feature for automated database optimization
+cron.schedule('0 4 * * 0', async () => {  // Every Sunday at 4 AM
+  logger.info('Starting automated database optimization');
+  try {
+    // Analyze table statistics
+    const stats = await analyzeDatabase();
+    
+    // Perform optimization if fragmentation > 30%
+    if (stats.fragmentation > 30) {
+      await optimizeDatabase();
+      logger.info('Database optimization completed successfully');
+    }
+    
+    // Send optimization report
+    await mailer.sendMail({
+      from: process.env.ALERT_FROM,
+      to: process.env.ALERT_TO,
+      subject: 'Weekly Database Optimization Report',
+      text: `Database Analysis:\n` +
+            `- Fragmentation: ${stats.fragmentation}%\n` +
+            `- Unused Space: ${stats.unusedSpace}MB\n` +
+            `- Index Health: ${stats.indexHealth}\n` +
+            `- Optimization Status: ${stats.fragmentation > 30 ? 'Performed' : 'Not Needed'}`
+    });
+  } catch (error) {
+    logger.error('Database optimization failed:', error);
+  }
+}); 

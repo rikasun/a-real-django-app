@@ -56,7 +56,11 @@ class CleanupService:
             metrics_before = self.get_system_metrics()
 
             if config.backup_first:
-                await self.create_backup()
+                backup_file = await self.create_backup()
+                # Verify backup before proceeding
+                verification = await self.verify_backup_integrity(backup_file)
+                if not verification['status']:
+                    raise RuntimeError("Backup verification failed, aborting cleanup")
 
             # Get records older than specified days
             cutoff_date = datetime.now() - timedelta(days=config.retention_days)
@@ -117,6 +121,7 @@ class CleanupService:
         backup_file = self.backup_path / f"backup_{timestamp}.sql"
         await self.db.create_backup(backup_file)
         logger.info(f"Created backup: {backup_file}")
+        return backup_file
 
     def get_uptime(self) -> float:
         return (datetime.now() - self.start_time).total_seconds()
@@ -237,6 +242,47 @@ class CleanupService:
         except Exception as e:
             logger.error(f"Failed to generate scheduler report: {str(e)}")
             raise RuntimeError(f"Error generating scheduler report: {str(e)}")
+
+    async def verify_backup_integrity(self, backup_file: Path) -> Dict[str, Any]:
+        """
+        Verify the integrity of a backup file and generate a detailed report.
+        
+        Args:
+            backup_file (Path): Path to the backup file to verify
+            
+        Returns:
+            Dict containing verification results including:
+            - checksum validation
+            - size comparison
+            - content verification
+            - recovery simulation results
+        """
+        try:
+            verification_start = datetime.now()
+            results = {
+                'backup_file': str(backup_file),
+                'timestamp': verification_start,
+                'checks': {}
+            }
+            
+            # Verify checksum
+            results['checks']['checksum'] = await self.verify_checksum(backup_file)
+            
+            # Verify backup size
+            results['checks']['size'] = await self.verify_backup_size(backup_file)
+            
+            # Test recovery simulation
+            results['checks']['recovery_test'] = await self.test_backup_recovery(backup_file)
+            
+            results['duration'] = (datetime.now() - verification_start).total_seconds()
+            results['status'] = all(results['checks'].values())
+            
+            logger.info(f"Backup verification completed: {results['status']}")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Backup verification failed: {str(e)}")
+            raise RuntimeError(f"Backup verification failed: {str(e)}")
 
 class DiskSpaceMonitor:
     def __init__(self, threshold_percent: float = 85.0):
