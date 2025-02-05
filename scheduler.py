@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import shutil
 import asyncio
+from services.performance_tracker import PerformanceTracker
 
 # Configure logging
 logging.basicConfig(
@@ -34,6 +35,7 @@ class CleanupService:
         self.scheduler = BackgroundScheduler()
         self.db = Database()
         self.email_service = EmailService()
+        self.performance_tracker = PerformanceTracker()
         self.backup_path = Path("./backups")
         self.backup_path.mkdir(exist_ok=True)
         self.last_cleanup_time = None
@@ -51,6 +53,8 @@ class CleanupService:
 
     async def cleanup_old_records(self, config: CleanupConfig):
         start_time = datetime.now()
+        metrics_start = self.get_system_metrics()
+        
         try:
             logger.info(f"Starting cleanup with config: {config}")
             metrics_before = self.get_system_metrics()
@@ -102,7 +106,24 @@ class CleanupService:
             # Keep only last 100 entries
             if len(self.cleanup_history) > 100:
                 self.cleanup_history = self.cleanup_history[-100:]
-                
+            
+            # Record performance metrics
+            cleanup_duration = (datetime.now() - start_time).total_seconds()
+            self.performance_tracker.record_cleanup_metrics({
+                'duration_seconds': cleanup_duration,
+                'records_processed': archived_count,
+                'cpu_usage': metrics_start['cpu_percent'],
+                'memory_usage': metrics_start['memory_usage'],
+                'success': True
+            })
+            
+            # Analyze performance and adjust schedule if needed
+            if archived_count > 0:
+                analysis = self.performance_tracker.analyze_performance_trends()
+                if analysis['recommendations']:
+                    logger.info(f"Performance recommendations: {analysis['recommendations']}")
+                    await self.adjust_schedule(analysis)
+            
         except Exception as e:
             # Record failed cleanup
             self.cleanup_history.append({
@@ -114,6 +135,15 @@ class CleanupService:
             })
             logger.error(f"Error in cleanup job: {str(e)}", exc_info=True)
             await self.email_service.send_alert('Cleanup job failed', str(e))
+            
+            # Record failed cleanup metrics
+            self.performance_tracker.record_cleanup_metrics({
+                'duration_seconds': (datetime.now() - start_time).total_seconds(),
+                'records_processed': 0,
+                'cpu_usage': metrics_start['cpu_percent'],
+                'memory_usage': metrics_start['memory_usage'],
+                'success': False
+            })
             raise
 
     async def create_backup(self):
@@ -283,6 +313,20 @@ class CleanupService:
         except Exception as e:
             logger.error(f"Backup verification failed: {str(e)}")
             raise RuntimeError(f"Backup verification failed: {str(e)}")
+
+    async def adjust_schedule(self, analysis: Dict):
+        """Adjust cleanup schedule based on performance analysis"""
+        if analysis['optimal_times']:
+            optimal_hour = analysis['optimal_times'][0]['hour']
+            
+            # Update schedule to run at optimal time
+            self.scheduler.reschedule_job(
+                'daily_cleanup',
+                trigger='cron',
+                hour=optimal_hour
+            )
+            
+            logger.info(f"Adjusted cleanup schedule to optimal hour: {optimal_hour}")
 
 class DiskSpaceMonitor:
     def __init__(self, threshold_percent: float = 85.0):
