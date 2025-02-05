@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 import asyncio
 from services.performance_tracker import PerformanceTracker
+from services.batch_optimizer import BatchOptimizer
 
 # Configure logging
 logging.basicConfig(
@@ -36,6 +37,7 @@ class CleanupService:
         self.db = Database()
         self.email_service = EmailService()
         self.performance_tracker = PerformanceTracker()
+        self.batch_optimizer = BatchOptimizer()
         self.backup_path = Path("./backups")
         self.backup_path.mkdir(exist_ok=True)
         self.last_cleanup_time = None
@@ -54,6 +56,12 @@ class CleanupService:
     async def cleanup_old_records(self, config: CleanupConfig):
         start_time = datetime.now()
         metrics_start = self.get_system_metrics()
+        
+        # Get optimal batch size based on current conditions
+        optimal_batch_size = self.batch_optimizer.get_optimal_batch_size(
+            metrics_start['memory_usage']
+        )
+        config.batch_size = optimal_batch_size
         
         try:
             logger.info(f"Starting cleanup with config: {config}")
@@ -117,12 +125,27 @@ class CleanupService:
                 'success': True
             })
             
+            # Record batch performance
+            self.batch_optimizer.record_batch_performance({
+                'batch_size': config.batch_size,
+                'duration_seconds': cleanup_duration,
+                'success': True,
+                'cpu_usage': metrics_start['cpu_percent'],
+                'memory_usage': metrics_start['memory_usage'],
+                'records_processed': archived_count
+            })
+            
             # Analyze performance and adjust schedule if needed
             if archived_count > 0:
                 analysis = self.performance_tracker.analyze_performance_trends()
                 if analysis['recommendations']:
                     logger.info(f"Performance recommendations: {analysis['recommendations']}")
                     await self.adjust_schedule(analysis)
+            
+            # Analyze batch performance
+            batch_analysis = self.batch_optimizer.analyze_batch_performance()
+            if batch_analysis['recommendations']:
+                logger.info(f"Batch size recommendations: {batch_analysis['recommendations']}")
             
         except Exception as e:
             # Record failed cleanup
@@ -144,6 +167,17 @@ class CleanupService:
                 'memory_usage': metrics_start['memory_usage'],
                 'success': False
             })
+            
+            # Record batch performance
+            self.batch_optimizer.record_batch_performance({
+                'batch_size': config.batch_size,
+                'duration_seconds': (datetime.now() - start_time).total_seconds(),
+                'success': False,
+                'cpu_usage': metrics_start['cpu_percent'],
+                'memory_usage': metrics_start['memory_usage'],
+                'records_processed': 0
+            })
+            
             raise
 
     async def create_backup(self):
