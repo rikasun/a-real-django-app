@@ -3,16 +3,6 @@ A real django app. Can't be more real.
 
 ## Docker Setup (Recommended)
 
-1. Install Docker and Docker Compose on your system
-2. Clone the repository
-3. Start the application:
-   ```bash
-   docker-compose up --build
-   ```
-4. Run migrations (first time only):
-   ```bash
-   docker-compose exec web python manage.py migrate
-   ```
 
 The application will be available at http://localhost:8001
 
