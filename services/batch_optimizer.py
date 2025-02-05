@@ -2,12 +2,14 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import statistics
 import logging
+import psutil
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class BatchMetrics:
+    """Metrics for a single batch operation"""
     batch_size: int
     duration: float
     success: bool
@@ -52,7 +54,13 @@ class BatchOptimizer:
     def get_optimal_batch_size(self, current_memory_usage: float) -> int:
         """
         Calculate optimal batch size based on recent performance history
-        and current system conditions
+        and current system conditions.
+
+        Args:
+            current_memory_usage: Current system memory usage percentage
+
+        Returns:
+            Optimal batch size based on performance history and system load
         """
         if not self.performance_history:
             return self.current_batch_size
@@ -96,7 +104,15 @@ class BatchOptimizer:
         return new_batch_size
 
     def analyze_batch_performance(self) -> Dict:
-        """Analyze batch size performance patterns"""
+        """
+        Analyze batch size performance patterns and generate recommendations.
+        
+        Returns:
+            Dict containing:
+                - optimal_batch_size: Best performing batch size
+                - batch_efficiency: Performance metrics for each batch size
+                - recommendations: List of suggested improvements
+        """
         if not self.performance_history:
             return {
                 "optimal_batch_size": self.current_batch_size,
