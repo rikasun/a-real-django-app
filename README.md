@@ -3,7 +3,6 @@ A real django app. Can't be more real.
 
 ## Docker Setup (Recommended)
 
-
 The application will be available at http://localhost:8001
 
 ### Running Tests with Docker
