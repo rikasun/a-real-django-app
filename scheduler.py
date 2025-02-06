@@ -199,7 +199,7 @@ class CleanupService:
     async def get_cleanup_history(self) -> List[Dict]:
         return self.cleanup_history
 
-    async def generate_scheduler_report(self, start_date: datetime, end_date: datetime, lmt: int = 100) -> Dict[str, Any]:
+    async def generate_scheduler_report(self, start_date: datetime, end_date: datetime, limit: int = 100) -> Dict[str, Any]:
         """
         Generate a comprehensive report of scheduler activities and performance metrics for a specified time period.
 
@@ -210,6 +210,7 @@ class CleanupService:
         Args:
             start_date (datetime): The start date for the report period
             end_date (datetime): The end date for the report period
+            limit (int): The maximum number of job history entries to include in the report. Default is 100.
 
         Returns:
             Dict[str, Any]: A dictionary containing the following report sections:
