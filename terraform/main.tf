@@ -38,6 +38,40 @@ module "rds" {
   db_password    = var.db_password
 }
 
+resource "aws_security_group" "web_server" {
+  name        = "web_server"
+  description = "Allow web traffic"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_cloudtrail" "main_trail" {
+  name                          = "main-trail"
+  s3_bucket_name                = aws_s3_bucket.my_react_app_bucket.bucket
+  is_multi_region_trail         = false
+  enable_log_file_validation    = false
+  include_global_service_events = true
+}
+
 # Redis Cache
 module "redis" {
   source = "./modules/redis"
