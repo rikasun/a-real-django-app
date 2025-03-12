@@ -1,6 +1,4 @@
 resource "aws_elasticache_cluster" "redis" {
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
   cluster_id           = "redis-cluster"
   engine               = "redis"
   node_type            = "cache.t2.micro"
