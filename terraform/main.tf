@@ -1,29 +1,25 @@
-# RDS Database
-resource "aws_db_instance" "main" {
-  identifier        = "${var.project_name}-db"
-  engine            = "postgres"
-  engine_version    = "13.7"
-  instance_class    = var.db_instance_class
-  allocated_storage = 20
+# Root main.tf - Organize by environment
+module "production" {
+  source = "./environments/production"
+  count  = terraform.workspace == "production" ? 1 : 0
 
-  db_name  = var.db_name
-  username = var.db_username
-  password = var.db_password
-
-  vpc_security_group_ids = [aws_security_group.db.id]
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-
-  backup_retention_period = 7
-  multi_az               = true
-  storage_encrypted      = true
-
-  skip_final_snapshot = false
-
-  tags = {
-    Name = "${var.project_name}-db"
-  }
+  project_name    = var.project_name
+  aws_region     = var.aws_region
+  environment    = "production"
+  instance_type  = "t3.medium"
+  multi_az       = true
 }
 
+module "staging" {
+  source = "./environments/staging"
+  count  = terraform.workspace == "staging" ? 1 : 0
+
+  project_name    = var.project_name
+  aws_region     = var.aws_region
+  environment    = "staging"
+  instance_type  = "t3.small"
+  multi_az       = false
+}
 
 # Application Load Balancer
 resource "aws_lb" "app" {

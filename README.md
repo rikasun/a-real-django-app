@@ -91,3 +91,58 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+
+## Infrastructure
+
+The infrastructure is managed using Terraform with a modular, environment-specific structure:
+
+```
+terraform/
+├── environments/
+│   ├── production/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── staging/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+├── modules/
+│   ├── networking/
+│   ├── database/
+│   ├── cache/
+│   ├── security/
+│   └── monitoring/
+├── config/
+│   └── backend.tf
+└── main.tf
+```
+
+### Infrastructure Deployment
+
+1. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+
+2. Select workspace:
+   ```bash
+   # For production
+   terraform workspace select production
+
+   # For staging
+   terraform workspace select staging
+   ```
+
+3. Plan and apply:
+   ```bash
+   terraform plan
+   terraform apply
+   ```
+
+### Important Notes
+
+- State is stored in S3 with DynamoDB locking
+- Each environment has its own configuration
+- Security groups are managed in a separate module
+- Monitoring and alerting are automatically configured
