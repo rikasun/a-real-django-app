@@ -5,7 +5,7 @@ locals {
   # RDS settings
   rds_config = {
     storage = {
-      encrypted = true
+      encrypted = false
       min_size  = 100
       max_size  = 500
     }
