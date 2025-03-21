@@ -17,6 +17,60 @@ variable "key_name" {
   type        = string
 }
 
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "private_subnets" {
+  description = "List of private subnet CIDR blocks"
+  type        = list(string)
+  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+}
+
+variable "availability_zones" {
+  description = "List of availability zones"
+  type        = list(string)
+  default     = ["us-west-2a", "us-west-2b", "us-west-2c"]
+}
+
+variable "asg_desired_capacity" {
+  description = "Desired capacity for ASG"
+  type        = number
+  default     = 2
+}
+
+variable "asg_max_size" {
+  description = "Maximum size for ASG"
+  type        = number
+  default     = 4
+}
+
+variable "asg_min_size" {
+  description = "Minimum size for ASG"
+  type        = number
+  default     = 1
+}
+
+variable "environment" {
+  description = "Environment name for SOC 2 compliance"
+  type        = string
+  validation {
+    condition     = contains(["production", "staging", "development"], var.environment)
+    error_message = "Environment must be production, staging, or development."
+  }
+}
+
+variable "allowed_egress_cidr" {
+  description = "Allowed CIDR blocks for egress traffic"
+  type        = string
+  validation {
+    condition     = can(cidrhost(var.allowed_egress_cidr, 0))
+    error_message = "Must be a valid CIDR block."
+  }
+}
+
 # Adding a new resource with violation in variables.tf
 resource "aws_config_config_rule" "compliance_rules" {
   name = "compliance-check"
