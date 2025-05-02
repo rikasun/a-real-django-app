@@ -64,6 +64,37 @@ API documentation is available at:
 
 ## Development
 
+### Infrastructure Setup
+
+The infrastructure is managed using Terraform. Configuration files are in the `terraform` directory.
+
+### Prerequisites
+
+- Terraform >= 1.0.0
+- AWS CLI configured with appropriate credentials
+- Python 3.8+
+
+### Deploying Infrastructure
+
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+### Infrastructure Components
+
+- VPC with public/private subnets
+- ECS cluster for containerized deployment
+- RDS instance for database
+- ElastiCache for Redis
+- Application Load Balancer
+- S3 bucket for storage
+- CloudWatch for monitoring
+
+See `terraform/README.md` for detailed configuration options.
+
 ### Common Commands
 
 With Docker:
