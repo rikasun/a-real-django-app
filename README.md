@@ -34,6 +34,10 @@ If you prefer to run without Docker:
    ```bash
    pip install -r requirements.txt
    ```
+   ⚠️ **Note:** The following dependencies have been updated:
+   - `django-redis` from 5.4.0 to 5.4.6
+   - `redis` from 5.4.0 to 5.5.0
+
 3. Copy `.env.example` to `.env` and update the values
 4. Run migrations:
    ```bash
@@ -91,3 +95,6 @@ If you make changes to requirements.txt:
 docker-compose down
 docker-compose up --build
 ```
+⚠️ **Note:** Ensure to rebuild the Docker containers to apply the updated dependencies:
+- `django-redis` updated to 5.4.6
+- `redis` updated to 5.5.0
