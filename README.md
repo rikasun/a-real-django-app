@@ -3,7 +3,6 @@ A real django app. Can't be more real.
 
 ## Docker Setup (Recommended)
 
-
 The application will be available at http://localhost:8001
 
 ### Running Tests with Docker
@@ -55,6 +54,7 @@ Required environment variables:
 - `DB_HOST`: Database host
 - `DB_PORT`: Database port
 - `SENTRY_DSN`: Sentry Data Source Name for error tracking (optional)
+- `REDIS_URL`: Redis URL for caching (added)
 
 ## API Documentation
 
